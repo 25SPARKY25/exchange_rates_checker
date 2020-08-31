@@ -1,0 +1,65 @@
+CREATE TABLE public."TVALDIC"
+(
+    "ID" bigserial NOT NULL,
+    "ID_VAL" character varying NOT NULL,
+    "Name" character varying NOT NULL,
+    "EngName" character varying NOT NULL,
+    "Nominal" character varying NOT NULL,
+    "ParentCode" character varying NOT NULL,
+    "ISO_Num_Code" smallint,
+    "ISO_Char_Code" character varying,
+    PRIMARY KEY ("ID")
+);
+
+ALTER TABLE public."TVALDIC"
+    OWNER to postgres;
+	
+	ALTER TABLE public."TVALDIC"
+    ADD CONSTRAINT "UnQ_ID_VAL" UNIQUE ("ID_VAL");
+	
+	
+	
+	CREATE TABLE public."TVALCURS"
+(
+    "ID" bigserial NOT NULL,
+    "Date" date NOT NULL,
+    "ID_VAL" character varying NOT NULL,
+    "Value" numeric(8, 4) NOT NULL,
+    PRIMARY KEY ("ID")
+);
+
+ALTER TABLE public."TVALCURS"
+    OWNER to postgres;
+	
+	
+	ALTER TABLE public."TVALCURS"
+    ADD CONSTRAINT "FK_VAL" FOREIGN KEY ("ID_VAL")
+    REFERENCES public."TVALDIC" ("ID_VAL") MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+    NOT VALID;
+CREATE INDEX "fki_FK_VAL"
+    ON public."TVALCURS"("ID_VAL");
+	
+	
+	
+	
+	
+	
+	
+	CREATE OR REPLACE FUNCTION public."getKurs"(IN "Date" date, IN "Name" character varying)
+    RETURNS numeric AS $val$
+    
+	DECLARE
+	val NUMERIC;
+    
+    
+BEGIN
+SELECT "Value" INTO val FROM "TVALCURS" as kurs JOIN "TVALDIC" as val ON kurs."ID_VAL" = val."ID_VAL" WHERE kurs."Date" =$1 AND val."Name"  =$2;
+RETURN val;
+END;
+
+$val$ LANGUAGE plpgsql;
+
+ALTER FUNCTION public."getKurs"(date, character varying)
+    OWNER TO postgres;
