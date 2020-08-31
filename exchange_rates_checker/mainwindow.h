@@ -1,21 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#define DEBUG 0
-
 #include <QMainWindow>
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QEventLoop>
+#include <QThread>
 
-
-#include "queryhandler.h"
-#include "xmlhandler.h"
-
-#if DEBUG<1
-#include <QDebug>
-#endif
+#include "valutechecker.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -36,6 +27,10 @@ private slots:
 
     void on_pushButton_3_clicked();
 
+    void on_comboBox_currentTextChanged(const QString &arg1);
+
+    void on_dateEdit_userDateChanged(const QDate &date);
+
 signals:
   void  done(); //для event loop`а
 
@@ -49,10 +44,10 @@ private:
     QMap<QString, QStringList> map;
     QEventLoop loop;    //для подготовки xml перед отправкой обработчику sql-запросов
     QString date;
-    QTimer *timer;
+    ValuteChecker * vachk; //класс, который отвечает за ежедневную загрузку курса валют
+
     QThread *thr;
 
-    QDate getCurrentTime();
 
     void checkValDictionary();
     void fillValDIctionary();

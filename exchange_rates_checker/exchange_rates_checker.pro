@@ -19,11 +19,13 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     queryhandler.cpp \
+    valutechecker.cpp \
     xmlhandler.cpp
 
 HEADERS += \
     mainwindow.h \
     queryhandler.h \
+    valutechecker.h \
     xmlhandler.h
 
 FORMS += \

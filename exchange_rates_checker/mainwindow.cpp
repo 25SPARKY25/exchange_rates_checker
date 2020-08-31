@@ -23,9 +23,10 @@ MainWindow::MainWindow(QWidget *parent)
        {
            checkValDictionary();
        }
-
-
-
+       vachk = new ValuteChecker(db);
+       thr = new QThread();
+        vachk->moveToThread(thr);
+        thr->start();
 }
 
 MainWindow::~MainWindow()
@@ -47,6 +48,19 @@ void MainWindow::on_pb_fillValKurs_clicked()
     double rez;
     progrDate = this->ui->dateEdit->date().toString("dd.MM.yyyy");
     valuta = this->ui->comboBox->currentText();
+
+    //тут я решил вытащить ID валюты из словаря, потому что в словаре некоторые наименования валют прописаны в единственном числе,
+    //а в курсе валют во множественном. Если строго по имени сравнивать то курс для некоторых валют может не отобразиться.
+    //Например: в словаре - "Японская Иена", а в курсе валют - "Японских Иен".
+    //поэтому буду сравнивать ID вместо имени
+    QSqlQuery q(db);
+    q.exec("SELECT  \"ID_VAL\" FROM public.\"TVALDIC\" WHERE \"Name\" = '" + valuta+ "';");
+    while(q.next())
+    {
+        valuta = q.value(0).toString();
+    }
+
+
     rez = getProgrCurs(progrDate, valuta);
     if(rez!=0)
     {
@@ -86,15 +100,10 @@ void MainWindow::on_pushButton_3_clicked()
             query+="SELECT public.\"getKurs\"('"+date+"', '"+ valuta+"')";
             q.prepare(query);
 
-            if( !q.exec())
-            {
-                qDebug()<<q.lastError().text();
-            }
-            else
+            if( q.exec())
             {
                 q.next();
                 QVariant var = q.value(0);
-
                 if(var!=0)
                 {
                     this->ui->label->setText("Курс валюты");
@@ -105,7 +114,7 @@ void MainWindow::on_pushButton_3_clicked()
                     this->ui->label->setText("На данную дату ничего не найдено!");
                     this->ui->label_2->setText("");
                 }
-            }
+            }            
     }
 }
 
@@ -214,7 +223,7 @@ double MainWindow::getProgrCurs(QString &datePr, QString &valutaPr)
             auto itr = map.begin();
             while(itr!=map.end())
             {
-                if(itr->value(3)==valutaPr)
+                if(itr.key()==valutaPr)
                 {
                     money = itr.value().back();
                     for(auto mitr=money.begin(); mitr!=money.end(); ++mitr) //заменяем символ у стоимости валюты
@@ -225,12 +234,23 @@ double MainWindow::getProgrCurs(QString &datePr, QString &valutaPr)
 
                     return  money.toDouble();
                 }
-                else
-                {
-                  return 0;
-                }
+                ++itr;
             }
         }
     }
     return 0;
+}
+
+void MainWindow::on_comboBox_currentTextChanged(const QString &arg1)
+{
+    Q_UNUSED(arg1);
+    this->ui->label->clear();
+    this->ui->label_2->clear();
+}
+
+void MainWindow::on_dateEdit_userDateChanged(const QDate &date)
+{
+    Q_UNUSED(date);
+    this->ui->label->clear();
+    this->ui->label_2->clear();
 }
