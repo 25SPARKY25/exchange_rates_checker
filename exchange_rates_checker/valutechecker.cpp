@@ -15,9 +15,9 @@ ValuteChecker::ValuteChecker(QSqlDatabase &db)
     this->db = db;
     isOpen = this->db.open();
     timer = new QTimer();
-    timer->setInterval(1000);
+    timer->setInterval(60000);
     connect(timer, &QTimer::timeout, this, &ValuteChecker::checkCurs);
-    timer->start(1000);
+    timer->start(60000);
 }
 
 void ValuteChecker::fillValCurs()
