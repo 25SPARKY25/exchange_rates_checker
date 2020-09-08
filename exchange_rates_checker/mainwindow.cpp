@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, this, &MainWindow::fileIsReady, Qt::DirectConnection);
+    connect(this, &MainWindow::fillcurs, this, &MainWindow::fillValCurs);
     connect(this, &MainWindow::done, &loop, &QEventLoop::quit);
     xml = new QXmlStreamReader();
 
@@ -80,6 +81,49 @@ void MainWindow::on_pushButton_3_clicked()
 
     if(dbIsOpen)
     {
+
+//        QtConcurrent::run( [this]()
+//        {
+//            QVariant val;
+//            QSqlQuery q(db);
+//            QString query;
+//            QString valuta;
+//            date = this->ui->dateEdit->date().toString("dd.MM.yyyy");
+//            valuta = this->ui->comboBox->currentText();
+
+
+
+//                    q.exec("SELECT COUNT(*) FROM public.\"TVALCURS\" WHERE \"Date\" = '" + date + "';");
+//                    while(q.next())
+//                    {
+//                        val = q.value(0);
+//                    }
+//                    if(val.toInt()==0)
+//                    {
+////                         fillValCurs();
+//                        emit fillcurs();
+//                    }
+
+//                        query+="SELECT public.\"getKurs\"('"+date+"', '"+ valuta+"')";
+//                        q.prepare(query);
+
+//                        if( q.exec())
+//                        {
+//                            q.next();
+//                            QVariant var = q.value(0);
+//                            if(var!=0)
+//                            {
+//                                this->ui->label->setText("Курс валюты");
+//                                this->ui->label_2->setText(var.toString());
+//                            }
+//                            else
+//                            {
+//                                this->ui->label->setText("На данную дату ничего не найдено!");
+//                                this->ui->label_2->setText("");
+//                            }
+//                        }
+//        } );
+
         QVariant val;
         QSqlQuery q(db);
         QString query;
@@ -114,7 +158,7 @@ void MainWindow::on_pushButton_3_clicked()
                     this->ui->label->setText("На данную дату ничего не найдено!");
                     this->ui->label_2->setText("");
                 }
-            }            
+            }
     }
 }
 
@@ -185,7 +229,7 @@ void MainWindow::fillValCurs()
         loop.exec();
 
 
-        if(map.size()!=0)
+        if(!map.isEmpty())
         {
             QVariant val;
             QString dateFromPage;
@@ -216,7 +260,7 @@ double MainWindow::getProgrCurs(QString &datePr, QString &valutaPr)
     QString money;
     manager->get(QNetworkRequest(QUrl(str)));
     loop.exec();
-    if(map.size()!=0)
+    if(!map.isEmpty())
     {
         if(datePr == map.last().value(0)) //совпадает ли введённая дата с датой из xml-дока
         {
@@ -229,7 +273,11 @@ double MainWindow::getProgrCurs(QString &datePr, QString &valutaPr)
                     for(auto mitr=money.begin(); mitr!=money.end(); ++mitr) //заменяем символ у стоимости валюты
                     {
                         if(*mitr==',')
+                        {
                             *mitr='.';
+                            break;
+                        }
+
                     }
 
                     return  money.toDouble();

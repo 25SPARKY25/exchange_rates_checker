@@ -7,7 +7,7 @@ ValuteChecker::ValuteChecker(QObject *parent) : QObject(parent)
 
 ValuteChecker::ValuteChecker(QSqlDatabase &db)
 {
-    date = QDate::currentDate().toString("dd.MM.yyyy");
+    currentDay = QDate::currentDate().toString("dd.MM.yyyy"); //получаем текущий день
     manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, this, &ValuteChecker::fileIsReady, Qt::DirectConnection);
     connect(this, &ValuteChecker::done, &loop, &QEventLoop::quit);
@@ -15,16 +15,17 @@ ValuteChecker::ValuteChecker(QSqlDatabase &db)
     this->db = db;
     isOpen = this->db.open();
     timer = new QTimer();
-    timer->setInterval(60000);
-    connect(timer, &QTimer::timeout, this, &ValuteChecker::checkCurs);
-    timer->start(60000);
+    connect(timer, &QTimer::timeout, this, &ValuteChecker::checkDay);
+    connect(this, &ValuteChecker::On_dayChanged, this, &ValuteChecker::checkCurs);
+    timer->start(1000);
+    checkCurs();
 }
 
 void ValuteChecker::fillValCurs()
 {
     if(isOpen)
     {
-        QString str = "http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + date;
+        QString str = "http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + currentDay;
         manager->get(QNetworkRequest(QUrl(str)));
         QSqlQuery q(db);
         QString query;
@@ -32,13 +33,13 @@ void ValuteChecker::fillValCurs()
         loop.exec();
 
 
-        if(map.size()!=0)
+        if(!map.isEmpty())
         {
             QVariant val;
             QString dateFromPage;
             dateFromPage = map.last().value(0);
 
-            if(dateFromPage==date)
+            if(dateFromPage==currentDay)
             {
                 q.exec("SELECT COUNT(*) FROM public.\"TVALCURS\" WHERE \"Date\" = '" + dateFromPage + "';");
                 while(q.next())
@@ -51,6 +52,7 @@ void ValuteChecker::fillValCurs()
                     q.prepare(query);
 
                     fillDB(q, map);
+                    dateFromBD = dateFromPage; //в случае успешного добавления записей обновляем дату из бд
                 }
             }
         }
@@ -58,20 +60,32 @@ void ValuteChecker::fillValCurs()
 }
 
 void ValuteChecker::checkCurs()
-{
+{   
     if(isOpen)
     {
-        q.exec("SELECT COUNT(*) FROM public.\"TVALCURS\" WHERE \"Date\" = '" + date + "';");
-        while(q.next())
+        if(dateFromBD.isEmpty()) //если дата из бд пустая то пытаемся получить её
         {
-            val = q.value(0);
+            q.exec("SELECT MAX(\"Date\") FROM public.\"TVALCURS\";"); //получаем дату последнего добавления курса валют
+            while(q.next())
+            {
+                dateFromBD = q.value(0).toDate().toString("dd.MM.yyyy");
+            }
         }
-        if(val.toInt()==0)
+
+        if(dateFromBD!=currentDay || dateFromBD.isEmpty()) //если даты разные или не нету записей в бд то пытаемся добавить их
         {
-             fillValCurs();
+            fillValCurs();
         }
     }
+}
 
+void ValuteChecker::checkDay()
+{
+    if(currentDay!=QDate::currentDate().toString("dd.MM.yyyy"))
+    {
+        currentDay = QDate::currentDate().toString("dd.MM.yyyy");
+        emit On_dayChanged();
+    }
 }
 
 void ValuteChecker::fileIsReady(QNetworkReply *reply)

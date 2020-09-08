@@ -44,7 +44,10 @@ void fillDB(QSqlQuery &query, const QMap<QString, QStringList> &map, const bool 
                     for(auto mitr=money.begin(); mitr!=money.end(); ++mitr) //заменяем символ у стоимости валюты
                     {
                         if(*mitr==',')
+                        {
                             *mitr='.';
+                            break;
+                        }
                     }
                     query.addBindValue(money);
                     query.exec();

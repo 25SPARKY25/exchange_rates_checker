@@ -5,6 +5,9 @@
 
 #include <QEventLoop>
 #include <QThread>
+#include <QtConcurrent>
+#include <QFuture>
+#include <QFutureWatcher>
 
 #include "valutechecker.h"
 
@@ -33,6 +36,7 @@ private slots:
 
 signals:
   void  done(); //для event loop`а
+  void fillcurs();
 
 
 private:
@@ -47,6 +51,9 @@ private:
     ValuteChecker * vachk; //класс, который отвечает за ежедневную загрузку курса валют
 
     QThread *thr;
+
+    QFuture<void> fut;
+    QFutureWatcher<void> futWatch;
 
 
     void checkValDictionary();

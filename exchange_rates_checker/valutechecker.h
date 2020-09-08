@@ -21,24 +21,27 @@ public:
 private:
     explicit ValuteChecker(QObject *parent = nullptr);
     QTimer *timer;
-    QString date;
+    QString dateFromBD, currentDay;
     QSqlQuery q;
-    QVariant val;
+//    QVariant val;
     QSqlDatabase db;
     QEventLoop loop;
     QMap<QString, QStringList> map;
     QNetworkAccessManager *manager;
     QXmlStreamReader *xml;
     bool isOpen;
+//    bool isWeekend{false}; //в выходные дни сайт не выкладывает курсы валют
 
     void fillValCurs();
 
 private slots:
     void checkCurs();
+    void checkDay();
     void fileIsReady(QNetworkReply *reply);
 
 signals:
     void done();
+    void On_dayChanged();
 
 };
 
